@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyXRocketAPI"
+dynamic = ["version"]
+description = "Python client for the xRocket Pay API"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Badiboy" }]
+keywords = ["xrocket", "pay", "crypto", "payments", "api"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+]
+dependencies = ["requests>=2.28"]
+
+[project.urls]
+Homepage = "https://github.com/Badiboy/pyXRocketAPI"
+Documentation = "https://docs.xrocket.exchange/api/pay/pay-api-overview"
+Repository = "https://github.com/Badiboy/pyXRocketAPI"
+
+[tool.setuptools]
+packages = ["pyXRocketAPI"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pyXRocketAPI.version.__version__"}
