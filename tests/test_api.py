@@ -15,6 +15,7 @@ from pyXRocketAPI.models import (
     InvoicePaymentTransactionBlockchainDetails,
     InvoiceUrl,
     HealthComponent,
+    MassPayout,
     PayoutCallback,
     WithdrawalCallback,
 )
@@ -99,6 +100,74 @@ class XRocketPayAPITests(unittest.TestCase):
         self.assertIsInstance(invoice.customer, InvoiceCustomer)
         self.assertEqual(invoice.customer.telegramUsername, "customer")
         self.assertIsInstance(invoice.links, InvoiceLinks)
+
+    def test_known_nested_request_models_serialize_to_api_json(self):
+        client = self.client(Response(data={"id": "invoice-1"}))
+        client.create_invoice(
+            price_currency="USDT",
+            price_amount="10",
+            callback=InvoiceCallback(callbackUrl="https://example.com/invoice", payload={"order": "1"}),
+            url=InvoiceUrl(successUrl="https://example.com/success", cancelUrl="https://example.com/cancel"),
+            customer=InvoiceCustomer(id="customer-1", telegramUsername="customer"),
+        )
+
+        self.assertEqual(self.request.call_args.kwargs["json"], {
+            "priceCurrency": "USDT",
+            "priceAmount": "10",
+            "callback": {"callbackUrl": "https://example.com/invoice", "payload": {"order": "1"}},
+            "url": {"successUrl": "https://example.com/success", "cancelUrl": "https://example.com/cancel"},
+            "customer": {"id": "customer-1", "telegramUsername": "customer"},
+        })
+
+        with self.assertRaises(TypeError):
+            client.create_invoice(price_currency="USDT", callback={"callbackUrl": "https://example.com"})
+
+    def test_cheque_payout_withdrawal_and_mass_payout_request_models_serialize(self):
+        client = self.client(Response(data={"chequeId": "cheque-1"}))
+        client.create_cheque(
+            asset="USDT",
+            amount="1",
+            callback=ChequeCallback(callbackUrl="https://example.com/cheque", payload={"id": "1"}),
+            url=ChequeUrl(successUrl="https://example.com/success"),
+        )
+        self.assertEqual(self.request.call_args.kwargs["json"]["callback"], {
+            "callbackUrl": "https://example.com/cheque", "payload": {"id": "1"},
+        })
+        self.assertEqual(self.request.call_args.kwargs["json"]["url"], {"successUrl": "https://example.com/success"})
+
+        self.request.return_value = Response(data={"payoutId": "payout-1"})
+        client.payout_funds_to_user(
+            target="123", target_type="telegram_user_id", asset="USDT", amount="1",
+            callback=PayoutCallback(callbackUrl="https://example.com/payout", payload={"id": "2"}),
+        )
+        self.assertEqual(self.request.call_args.kwargs["json"]["callback"], {
+            "callbackUrl": "https://example.com/payout", "payload": {"id": "2"},
+        })
+
+        self.request.return_value = Response(data={"withdrawalId": "withdrawal-1"})
+        client.withdrawal_funds(
+            client_withdrawal_id="withdrawal-1", network="TON", address="address", asset="USDT", amount="1",
+            callback=WithdrawalCallback(callbackUrl="https://example.com/withdrawal", payload={"id": "3"}),
+        )
+        self.assertEqual(self.request.call_args.kwargs["json"]["callback"], {
+            "callbackUrl": "https://example.com/withdrawal", "payload": {"id": "3"},
+        })
+
+        self.request.return_value = Response(data={"successPayouts": [], "errorPayouts": []})
+        client.create_mass_payouts(
+            asset="USDT",
+            payouts=[MassPayout(
+                target="123", targetType="telegram_user_id", amount="1",
+                callback=PayoutCallback(callbackUrl="https://example.com/mass-payout"),
+            )],
+        )
+        self.assertEqual(self.request.call_args.kwargs["json"], {
+            "asset": "USDT",
+            "payouts": [{
+                "target": "123", "targetType": "telegram_user_id", "amount": "1",
+                "callback": {"callbackUrl": "https://example.com/mass-payout"},
+            }],
+        })
 
     def test_invoice_payment_deserializes_transaction_subschemas(self):
         client = self.client(Response(data={

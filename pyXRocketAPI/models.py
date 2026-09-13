@@ -2,6 +2,22 @@ import json
 from abc import ABC
 
 
+class Dictionaryable(ABC):
+    """Base class for models that can be converted to an API dictionary.
+
+    Subclasses implement :meth:`to_dict` to prepare their fields for use in a
+    JSON request body. ``None`` values are omitted; valid falsey values are
+    retained.
+    """
+
+    def to_dict(self):
+        """Return the model fields as a dictionary accepted by the API.
+
+        :return: API-ready dictionary.
+        """
+        raise NotImplementedError
+
+
 class xRocketObject(ABC):
     """Base class for xRocket Pay API response models.
 
@@ -174,50 +190,60 @@ class InvoiceLinks(xRocketObject):
 
 
 # noinspection method-overriding
-class InvoiceCallback(xRocketObject):
-    """Webhook settings returned for an invoice.
+class InvoiceCallback(Dictionaryable, xRocketObject):
+    """Webhook settings for an invoice.
 
-    API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice
+    API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-create-invoice
 
     :param callbackUrl: Url for notify when order status is changed.
     :param payload: Custom data sent to webhook.
     """
 
-    def __init__(self):
-        self.callbackUrl = None
-        self.payload = None
+    def __init__(self, callbackUrl=None, payload=None):
+        self.callbackUrl = callbackUrl
+        self.payload = payload
 
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         return super(InvoiceCallback, cls).de_json(data, process_mode=2)
 
+    def to_dict(self):
+        return {key: value for key, value in {
+            "callbackUrl": self.callbackUrl, "payload": self.payload,
+        }.items() if value is not None}
+
 
 # noinspection method-overriding
-class InvoiceUrl(xRocketObject):
-    """User redirect URLs returned for an invoice.
+class InvoiceUrl(Dictionaryable, xRocketObject):
+    """User redirect URLs for an invoice.
 
-    API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice
+    API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-create-invoice
 
     :param successUrl: Redirect user to url after successful payment.
     :param cancelUrl: Redirect user to url after cancel payment.
     """
 
-    def __init__(self):
-        self.successUrl = None
-        self.cancelUrl = None
+    def __init__(self, successUrl=None, cancelUrl=None):
+        self.successUrl = successUrl
+        self.cancelUrl = cancelUrl
 
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         return super(InvoiceUrl, cls).de_json(data, process_mode=2)
 
+    def to_dict(self):
+        return {key: value for key, value in {
+            "successUrl": self.successUrl, "cancelUrl": self.cancelUrl,
+        }.items() if value is not None}
+
 
 # noinspection method-overriding
-class InvoiceCustomer(xRocketObject):
-    """Customer information returned for an invoice.
+class InvoiceCustomer(Dictionaryable, xRocketObject):
+    """Customer information for an invoice.
 
-    API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice
+    API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-create-invoice
 
     :param id: Customer id in your app.
     :param email: Customer email.
@@ -225,16 +251,22 @@ class InvoiceCustomer(xRocketObject):
     :param telegramUsername: Customer telegram username (without @).
     """
 
-    def __init__(self):
-        self.id = None
-        self.email = None
-        self.telegramId = None
-        self.telegramUsername = None
+    def __init__(self, id=None, email=None, telegramId=None, telegramUsername=None):
+        self.id = id
+        self.email = email
+        self.telegramId = telegramId
+        self.telegramUsername = telegramUsername
 
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         return super(InvoiceCustomer, cls).de_json(data, process_mode=2)
+
+    def to_dict(self):
+        return {key: value for key, value in {
+            "id": self.id, "email": self.email, "telegramId": self.telegramId,
+            "telegramUsername": self.telegramUsername,
+        }.items() if value is not None}
 
 
 # noinspection method-overriding
@@ -313,41 +345,51 @@ class ChequeLinks(xRocketObject):
 
 
 # noinspection method-overriding
-class ChequeCallback(xRocketObject):
-    """Webhook settings returned for a cheque.
+class ChequeCallback(Dictionaryable, xRocketObject):
+    """Webhook settings for a cheque.
 
-    API: https://docs.xrocket.exchange/api/pay/reference/http/cheque-controller-get-cheque
+    API: https://docs.xrocket.exchange/api/pay/reference/http/cheque-controller-create-cheque
 
     :param callbackUrl: Url for notifying when cheque status changes.
     :param payload: Custom data sent to webhook along with cheque status updates.
     """
-    def __init__(self):
-        self.callbackUrl = None
-        self.payload = None
+    def __init__(self, callbackUrl=None, payload=None):
+        self.callbackUrl = callbackUrl
+        self.payload = payload
 
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         return super(ChequeCallback, cls).de_json(data, process_mode=2)
 
+    def to_dict(self):
+        return {key: value for key, value in {
+            "callbackUrl": self.callbackUrl, "payload": self.payload,
+        }.items() if value is not None}
+
 
 # noinspection method-overriding
-class ChequeUrl(xRocketObject):
-    """User redirect URLs returned for a cheque.
+class ChequeUrl(Dictionaryable, xRocketObject):
+    """User redirect URLs for a cheque.
 
-    API: https://docs.xrocket.exchange/api/pay/reference/http/cheque-controller-get-cheque
+    API: https://docs.xrocket.exchange/api/pay/reference/http/cheque-controller-create-cheque
 
     :param successUrl: Redirect user to URL after successful cheque activation.
     :param cancelUrl: Redirect user to URL after cheque activation is cancelled/failed.
     """
-    def __init__(self):
-        self.successUrl = None
-        self.cancelUrl = None
+    def __init__(self, successUrl=None, cancelUrl=None):
+        self.successUrl = successUrl
+        self.cancelUrl = cancelUrl
 
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         return super(ChequeUrl, cls).de_json(data, process_mode=2)
+
+    def to_dict(self):
+        return {key: value for key, value in {
+            "successUrl": self.successUrl, "cancelUrl": self.cancelUrl,
+        }.items() if value is not None}
 
 
 # noinspection method-overriding
@@ -395,22 +437,27 @@ class Cheque(xRocketObject):
 
 
 # noinspection method-overriding
-class PayoutCallback(xRocketObject):
-    """Webhook settings returned for a payout.
+class PayoutCallback(Dictionaryable, xRocketObject):
+    """Webhook settings for a payout.
 
-    API: https://docs.xrocket.exchange/api/pay/reference/http/payout-controller-get-payout
+    API: https://docs.xrocket.exchange/api/pay/reference/http/payout-controller-payout
 
     :param callbackUrl: Url for notify when payout status is changed.
     :param payload: Custom data sent to webhook.
     """
-    def __init__(self):
-        self.callbackUrl = None
-        self.payload = None
+    def __init__(self, callbackUrl=None, payload=None):
+        self.callbackUrl = callbackUrl
+        self.payload = payload
 
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         return super(PayoutCallback, cls).de_json(data, process_mode=2)
+
+    def to_dict(self):
+        return {key: value for key, value in {
+            "callbackUrl": self.callbackUrl, "payload": self.payload,
+        }.items() if value is not None}
 
 
 # noinspection method-overriding
@@ -450,22 +497,27 @@ class Payout(xRocketObject):
 
 
 # noinspection method-overriding
-class WithdrawalCallback(xRocketObject):
-    """Webhook settings returned for a withdrawal.
+class WithdrawalCallback(Dictionaryable, xRocketObject):
+    """Webhook settings for a withdrawal.
 
-    API: https://docs.xrocket.exchange/api/pay/reference/http/withdrawal-controller-get-withdrawal
+    API: https://docs.xrocket.exchange/api/pay/reference/http/withdrawal-controller-create-withdrawal
 
     :param callbackUrl: Url for notify when withdrawal status is changed.
     :param payload: Custom data sent to webhook.
     """
-    def __init__(self):
-        self.callbackUrl = None
-        self.payload = None
+    def __init__(self, callbackUrl=None, payload=None):
+        self.callbackUrl = callbackUrl
+        self.payload = payload
 
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         return super(WithdrawalCallback, cls).de_json(data, process_mode=2)
+
+    def to_dict(self):
+        return {key: value for key, value in {
+            "callbackUrl": self.callbackUrl, "payload": self.payload,
+        }.items() if value is not None}
 
 
 # noinspection method-overriding
@@ -956,6 +1008,42 @@ class WithdrawalLink(xRocketObject):
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         return super(WithdrawalLink, cls).de_json(data, process_mode=2)
+
+
+# noinspection method-overriding
+class MassPayout(Dictionaryable, xRocketObject):
+    """One payout supplied to a mass-payout request.
+
+    API: https://docs.xrocket.exchange/api/pay/reference/http/mass-payouts-controller-create-mass-payouts
+
+    :param target: Target.
+    :param targetType: Target type (only TelegramUserId is supported for mass payouts).
+    :param amount: Payout amount.
+    :param clientPayoutId: Unique payout ID in your system to prevent double spends.
+    :param description: Payout description.
+    :param callback: Webhook settings for payout status updates.
+    """
+    def __init__(self, target=None, targetType=None, amount=None, clientPayoutId=None,
+                 description=None, callback=None):
+        self.target = target
+        self.targetType = targetType
+        self.amount = amount
+        self.clientPayoutId = clientPayoutId
+        self.description = description
+        self.callback = callback
+
+    def to_dict(self):
+        if self.callback is not None and not isinstance(self.callback, PayoutCallback):
+            raise TypeError("callback must be an instance of PayoutCallback.")
+        data = {
+            "target": self.target,
+            "targetType": self.targetType,
+            "amount": self.amount,
+            "clientPayoutId": self.clientPayoutId,
+            "description": self.description,
+            "callback": self.callback.to_dict() if self.callback is not None else None,
+        }
+        return {key: value for key, value in data.items() if value is not None}
 
 
 # noinspection method-overriding

@@ -4,22 +4,10 @@ from typing import Any
 import requests
 
 from .exceptions import xRocketAPIException
-from .models import App, Balance, Cheque, ChequesList, Currency, Health, Invoice, InvoicePaymentAddress, InvoicePaymentsList, InvoicesList, MassPayouts, xPage, Payout, PayoutsList, Rate, Withdrawal, WithdrawalLink, WithdrawalQuotas, WithdrawalsList, xRocketObject
+from .models import App, Balance, Cheque, ChequeCallback, ChequeUrl, ChequesList, Currency, Health, Invoice, InvoiceCallback, InvoiceCustomer, InvoicePaymentAddress, InvoicePaymentsList, InvoiceUrl, InvoicesList, MassPayout, MassPayouts, Payout, PayoutCallback, PayoutsList, Rate, Withdrawal, WithdrawalCallback, WithdrawalLink, WithdrawalQuotas, WithdrawalsList, xPage, xRocketObject
 
 PRODUCTION_API_URL = "https://pay.api.xrocket.exchange"
 TESTNET_API_URL = "https://pay.api.testnet.xrocket.exchange"
-
-
-def _without_none(**values: Any) -> dict[str, Any]:
-    """Keep valid falsey API values while omitting arguments not supplied."""
-    return {key: value for key, value in values.items() if value is not None}
-
-
-def _identifier(first_name: str, first_value: str | None, second_name: str, second_value: str | None) -> dict[str, str]:
-    if first_value is None and second_value is None:
-        raise ValueError(f"Specify {first_name} or {second_name}.")
-    return _without_none(**{first_name: first_value, second_name: second_value})
-
 
 class xRocketPayAPI:
     """Client for the current xRocket Pay API.
@@ -28,8 +16,7 @@ class xRocketPayAPI:
     ----------
     token:
         App-specific Pay API Bearer token. Public calls such as
-        ``health_check()`` and ``get_available_currencies()`` do not require
-        one.
+        ``health_check()`` and ``get_available_currencies()`` do not require one.
     testnet:
         Select the xRocket Pay testnet URL. A testnet token is required.
     timeout:
@@ -38,6 +25,28 @@ class xRocketPayAPI:
         Default is 30 seconds.
         A tuple of ``(connect, read)`` timeouts can be passed to override the default for each phase.
     """
+
+    @staticmethod
+    def __without_none(**values: Any) -> dict[str, Any]:
+        """Keep valid falsey API values while omitting arguments not supplied."""
+        return {key: value for key, value in values.items() if value is not None}
+
+    @staticmethod
+    def __identifier(first_name: str, first_value: str | None,
+                     second_name: str, second_value: str | None) -> dict[str, str]:
+        """Return identifier query parameters after validating their presence."""
+        if first_value is None and second_value is None:
+            raise ValueError(f"Specify {first_name} or {second_name}.")
+        return xRocketPayAPI.__without_none(**{first_name: first_value, second_name: second_value})
+
+    @staticmethod
+    def __request_model(value: Any, model_type: type, parameter_name: str) -> dict[str, Any] | None:
+        """Serialize one known nested request model or reject a plain mapping."""
+        if value is None:
+            return None
+        if not isinstance(value, model_type):
+            raise TypeError("{} must be an instance of {}.".format(parameter_name, model_type.__name__))
+        return value.to_dict()
 
     def __init__(
         self,
@@ -152,7 +161,7 @@ class xRocketPayAPI:
         :return: ``list[Currency]``.
         """
         data = self._request(
-            "GET", "/api/v1/currencies", params=_without_none(kind=kind), auth_required=False
+            "GET", "/api/v1/currencies", params=self.__without_none(kind=kind), auth_required=False
         )
         return [Currency.de_json(item) for item in data]
 
@@ -183,9 +192,9 @@ class xRocketPayAPI:
         client_invoice_id: str | None = None,
         description: str | None = None,
         expires_in: int | None = None,
-        callback: Mapping[str, Any] | None = None,
-        url: Mapping[str, Any] | None = None,
-        customer: Mapping[str, Any] | None = None,
+        callback: InvoiceCallback | None = None,
+        url: InvoiceUrl | None = None,
+        customer: InvoiceCustomer | None = None,
         is_fee_paid_by_user: bool | None = None,
         data: Mapping[str, Any] | None = None,
         platform_id: str | None = None,
@@ -203,19 +212,22 @@ class xRocketPayAPI:
         :param client_invoice_id: Client Invoice ID as assigned by the client.
         :param description: Description for invoice.
         :param expires_in: Payment expires in milliseconds.
-        :param callback: Callback data.
-        :param url: User redirect urls.
-        :param customer: Customer info.
+        :param callback: Callback data as an ``InvoiceCallback`` instance.
+        :param url: User redirect urls as an ``InvoiceUrl`` instance.
+        :param customer: Customer info as an ``InvoiceCustomer`` instance.
         :param is_fee_paid_by_user: If true, the user pays a commission.
         :param data: Custom user data passed through and returned in callbacks/webhooks (max size 4KB).
         :param platform_id: Platform identifier.
         :return: ``Invoice``.
         """
-        body = _without_none(
+        body = self.__without_none(
             priceCurrency=price_currency, priceAmount=price_amount, minPayment=min_payment, numPayments=num_payments,
             payoutCurrency=payout_currency, payCurrencies=list(pay_currencies) if pay_currencies is not None else None,
-            clientInvoiceId=client_invoice_id, description=description, expiresIn=expires_in, callback=callback, url=url,
-            customer=customer, isFeePaidByUser=is_fee_paid_by_user, data=data, platformId=platform_id,
+            clientInvoiceId=client_invoice_id, description=description, expiresIn=expires_in,
+            callback=self.__request_model(callback, InvoiceCallback, "callback"),
+            url=self.__request_model(url, InvoiceUrl, "url"),
+            customer=self.__request_model(customer, InvoiceCustomer, "customer"),
+            isFeePaidByUser=is_fee_paid_by_user, data=data, platformId=platform_id,
         )
         return Invoice.de_json(self._request("POST", "/api/v1/invoices", body=body))
 
@@ -233,7 +245,7 @@ class xRocketPayAPI:
         :param limit: No description is provided.
         :return: ``InvoicesList``.
         """
-        params = _without_none(asset=asset, fiat=fiat, ids=list(ids) if ids is not None else None, status=status, cursor=cursor, limit=limit)
+        params = self.__without_none(asset=asset, fiat=fiat, ids=list(ids) if ids is not None else None, status=status, cursor=cursor, limit=limit)
         return InvoicesList.de_json(self._request("GET", "/api/v1/invoices", params=params))
 
     def get_invoice_info(self, invoice_id: str | None = None, client_invoice_id: str | None = None) -> Invoice:
@@ -246,7 +258,7 @@ class xRocketPayAPI:
         :param client_invoice_id: Client Invoice ID assigned by the client. Either invoiceId or clientInvoiceId is required.
         :return: ``Invoice``.
         """
-        return Invoice.de_json(self._request("GET", "/api/v1/invoice", params=_identifier("invoiceId", invoice_id, "clientInvoiceId", client_invoice_id)))
+        return Invoice.de_json(self._request("GET", "/api/v1/invoice", params=self.__identifier("invoiceId", invoice_id, "clientInvoiceId", client_invoice_id)))
 
     def delete_invoice(self, invoice_id: str | None = None, client_invoice_id: str | None = None) -> None:
         """Delete invoice.
@@ -258,7 +270,7 @@ class xRocketPayAPI:
         :param client_invoice_id: Client Invoice ID assigned by the client. Either invoiceId or clientInvoiceId is required.
         :return: ``None``.
         """
-        self._request("DELETE", "/api/v1/invoice", params=_identifier("invoiceId", invoice_id, "clientInvoiceId", client_invoice_id))
+        self._request("DELETE", "/api/v1/invoice", params=self.__identifier("invoiceId", invoice_id, "clientInvoiceId", client_invoice_id))
 
     def get_invoice_payments(self, invoice_id: str | None = None, client_invoice_id: str | None = None,
                          cursor: str | None = None, limit: int | None = None) -> InvoicePaymentsList:
@@ -273,8 +285,8 @@ class xRocketPayAPI:
         :param limit: No description is provided.
         :return: ``InvoicePaymentsList``.
         """
-        params = _identifier("invoiceId", invoice_id, "clientInvoiceId", client_invoice_id)
-        params.update(_without_none(cursor=cursor, limit=limit))
+        params = self.__identifier("invoiceId", invoice_id, "clientInvoiceId", client_invoice_id)
+        params.update(self.__without_none(cursor=cursor, limit=limit))
         return InvoicePaymentsList.de_json(self._request("GET", "/api/v1/invoice/payments", params=params))
 
     def create_invoice_payment_address(self, pay_network: str, invoice_id: str | None = None,
@@ -290,11 +302,11 @@ class xRocketPayAPI:
         """
         return InvoicePaymentAddress.de_json(self._request(
             "POST", "/api/v1/invoices/payments/address",
-            params=_identifier("invoiceId", invoice_id, "clientInvoiceId", client_invoice_id), body={"payNetwork": pay_network},
+            params=self.__identifier("invoiceId", invoice_id, "clientInvoiceId", client_invoice_id), body={"payNetwork": pay_network},
         ))
 
     def create_cheque(self, asset: str, amount: str, client_cheque_id: str | None = None, password: str | None = None,
-                      description: str | None = None, callback: Mapping[str, Any] | None = None, url: Mapping[str, Any] | None = None,
+                      description: str | None = None, callback: ChequeCallback | None = None, url: ChequeUrl | None = None,
                       target_type: str | None = None, target: str | None = None) -> Cheque:
         """Create cheque.
 
@@ -306,15 +318,16 @@ class xRocketPayAPI:
         :param client_cheque_id: Unique cheque ID in your system to prevent double spends.
         :param password: Cheque password, the recipient has to enter it to redeem the cheque.
         :param description: Description for cheque.
-        :param callback: Webhook settings for cheque activation updates.
-        :param url: User redirect urls after cheque activation.
+        :param callback: Webhook settings for cheque activation updates as a ``ChequeCallback`` instance.
+        :param url: User redirect urls after cheque activation as a ``ChequeUrl`` instance.
         :param target_type: Target type for cheque, has to be passed together with target.
         :param target: Target for cheque, has to be passed together with targetType.
         :return: ``Cheque``.
         """
-        return Cheque.de_json(self._request("POST", "/api/v1/cheques", body=_without_none(
+        return Cheque.de_json(self._request("POST", "/api/v1/cheques", body=self.__without_none(
             asset=asset, amount=str(amount), clientChequeId=client_cheque_id, password=password, description=description,
-            callback=callback, url=url, targetType=target_type, target=target,
+            callback=self.__request_model(callback, ChequeCallback, "callback"),
+            url=self.__request_model(url, ChequeUrl, "url"), targetType=target_type, target=target,
         )))
 
     def get_cheques_list(self, from_date: str | None = None, to_date: str | None = None, target_type: str | None = None,
@@ -333,7 +346,7 @@ class xRocketPayAPI:
         :param limit: No description is provided.
         :return: ``ChequesList``.
         """
-        return ChequesList.de_json(self._request("GET", "/api/v1/cheques", params=_without_none(
+        return ChequesList.de_json(self._request("GET", "/api/v1/cheques", params=self.__without_none(
             fromDate=from_date, toDate=to_date, targetType=target_type, target=target, state=state, cursor=cursor, limit=limit,
         )))
 
@@ -347,7 +360,7 @@ class xRocketPayAPI:
         :param client_cheque_id: Unique cheque id in your system.
         :return: ``Cheque``.
         """
-        return Cheque.de_json(self._request("GET", "/api/v1/cheque", params=_identifier("chequeId", cheque_id, "clientChequeId", client_cheque_id)))
+        return Cheque.de_json(self._request("GET", "/api/v1/cheque", params=self.__identifier("chequeId", cheque_id, "clientChequeId", client_cheque_id)))
 
     def update_cheque(self, description: str, cheque_id: str | None = None, client_cheque_id: str | None = None) -> Cheque:
         """Update cheque.
@@ -360,7 +373,7 @@ class xRocketPayAPI:
         :param client_cheque_id: Unique cheque id in your system.
         :return: ``Cheque``.
         """
-        return Cheque.de_json(self._request("PUT", "/api/v1/cheques", params=_identifier("chequeId", cheque_id, "clientChequeId", client_cheque_id), body={"description": description}))
+        return Cheque.de_json(self._request("PUT", "/api/v1/cheques", params=self.__identifier("chequeId", cheque_id, "clientChequeId", client_cheque_id), body={"description": description}))
 
     def delete_cheque(self, cheque_id: str | None = None, client_cheque_id: str | None = None) -> None:
         """Delete cheque.
@@ -372,10 +385,10 @@ class xRocketPayAPI:
         :param client_cheque_id: Unique cheque id in your system.
         :return: ``None``.
         """
-        self._request("DELETE", "/api/v1/cheques", params=_identifier("chequeId", cheque_id, "clientChequeId", client_cheque_id))
+        self._request("DELETE", "/api/v1/cheques", params=self.__identifier("chequeId", cheque_id, "clientChequeId", client_cheque_id))
 
     def payout_funds_to_user(self, target: str, target_type: str, asset: str, amount: str, client_payout_id: str | None = None,
-                      description: str | None = None, callback: Mapping[str, Any] | None = None) -> Payout:
+                      description: str | None = None, callback: PayoutCallback | None = None) -> Payout:
         """Payout funds to user.
 
         API: https://docs.xrocket.exchange/api/pay/reference/http/payout-controller-payout
@@ -386,12 +399,12 @@ class xRocketPayAPI:
         :param amount: Payout amount.
         :param client_payout_id: Unique payout ID in your system to prevent double spends.
         :param description: Payout description.
-        :param callback: Webhook settings for payout status updates.
+        :param callback: Webhook settings for payout status updates as a ``PayoutCallback`` instance.
         :return: ``Payout``.
         """
-        return Payout.de_json(self._request("POST", "/api/v1/payouts", body=_without_none(
+        return Payout.de_json(self._request("POST", "/api/v1/payouts", body=self.__without_none(
             target=target, targetType=target_type, asset=asset, amount=str(amount), clientPayoutId=client_payout_id,
-            description=description, callback=callback,
+            description=description, callback=self.__request_model(callback, PayoutCallback, "callback"),
         )))
 
     def get_payouts_list(self, from_date: str | None = None, to_date: str | None = None, cursor: str | None = None,
@@ -406,7 +419,7 @@ class xRocketPayAPI:
         :param limit: No description is provided.
         :return: ``PayoutsList``.
         """
-        return PayoutsList.de_json(self._request("GET", "/api/v1/payouts", params=_without_none(fromDate=from_date, toDate=to_date, cursor=cursor, limit=limit)))
+        return PayoutsList.de_json(self._request("GET", "/api/v1/payouts", params=self.__without_none(fromDate=from_date, toDate=to_date, cursor=cursor, limit=limit)))
 
     def get_payout_info(self, payout_id: str | None = None, client_payout_id: str | None = None) -> Payout:
         """Get payout info.
@@ -417,21 +430,26 @@ class xRocketPayAPI:
         :param client_payout_id: Unique payout ID in your system to prevent double spends.
         :return: ``Payout``.
         """
-        return Payout.de_json(self._request("GET", "/api/v1/payout", params=_identifier("payoutId", payout_id, "clientPayoutId", client_payout_id)))
+        return Payout.de_json(self._request("GET", "/api/v1/payout", params=self.__identifier("payoutId", payout_id, "clientPayoutId", client_payout_id)))
 
-    def create_mass_payouts(self, asset: str, payouts: Iterable[Mapping[str, Any]]) -> MassPayouts:
+    def create_mass_payouts(self, asset: str, payouts: Iterable[MassPayout]) -> MassPayouts:
         """Create mass payouts (Telegram users only).
 
         API: https://docs.xrocket.exchange/api/pay/reference/http/mass-payouts-controller-create-mass-payouts
 
         :param asset: Asset of payouts.
-        :param payouts: List of payouts to process.
+        :param payouts: List of ``MassPayout`` instances to process.
         :return: ``MassPayouts``.
         """
-        return MassPayouts.de_json(self._request("POST", "/api/v1/mass-payouts", body={"asset": asset, "payouts": list(payouts)}))
+        payout_data = []
+        for payout in payouts:
+            if not isinstance(payout, MassPayout):
+                raise TypeError("payouts must contain only MassPayout instances.")
+            payout_data.append(payout.to_dict())
+        return MassPayouts.de_json(self._request("POST", "/api/v1/mass-payouts", body={"asset": asset, "payouts": payout_data}))
 
     def withdrawal_funds(self, client_withdrawal_id: str, network: str, address: str, asset: str, amount: str,
-                         comment: str | None = None, callback: Mapping[str, Any] | None = None) -> Withdrawal:
+                         comment: str | None = None, callback: WithdrawalCallback | None = None) -> Withdrawal:
         """Withdrawal funds from application to external wallet.
 
         API: https://docs.xrocket.exchange/api/pay/reference/http/withdrawal-controller-create-withdrawal
@@ -442,12 +460,12 @@ class xRocketPayAPI:
         :param asset: Asset code.
         :param amount: Withdrawal amount.
         :param comment: Withdrawal comment.
-        :param callback: Webhook settings for withdrawal status updates.
+        :param callback: Webhook settings for withdrawal status updates as a ``WithdrawalCallback`` instance.
         :return: ``Withdrawal``.
         """
-        return Withdrawal.de_json(self._request("POST", "/api/v1/withdrawals", body=_without_none(
+        return Withdrawal.de_json(self._request("POST", "/api/v1/withdrawals", body=self.__without_none(
             clientWithdrawalId=client_withdrawal_id, network=network, address=address, asset=asset, amount=str(amount),
-            comment=comment, callback=callback,
+            comment=comment, callback=self.__request_model(callback, WithdrawalCallback, "callback"),
         )))
 
     def get_withdrawals_list(self, from_date: str | None = None, to_date: str | None = None, status: str | None = None,
@@ -463,7 +481,7 @@ class xRocketPayAPI:
         :param limit: No description is provided.
         :return: ``WithdrawalsList``.
         """
-        return WithdrawalsList.de_json(self._request("GET", "/api/v1/withdrawals", params=_without_none(
+        return WithdrawalsList.de_json(self._request("GET", "/api/v1/withdrawals", params=self.__without_none(
             fromDate=from_date, toDate=to_date, status=status, cursor=cursor, limit=limit,
         )))
 
@@ -476,7 +494,7 @@ class xRocketPayAPI:
         :param client_withdrawal_id: Unique withdrawal ID in your system to prevent double spends.
         :return: ``Withdrawal``.
         """
-        return Withdrawal.de_json(self._request("GET", "/api/v1/withdrawal", params=_identifier("withdrawalId", withdrawal_id, "clientWithdrawalId", client_withdrawal_id)))
+        return Withdrawal.de_json(self._request("GET", "/api/v1/withdrawal", params=self.__identifier("withdrawalId", withdrawal_id, "clientWithdrawalId", client_withdrawal_id)))
 
     def get_withdrawal_quotas(self, network: str, asset: str) -> WithdrawalQuotas:
         """Get application withdrawal quotas.
@@ -503,6 +521,6 @@ class xRocketPayAPI:
         :param platform: Platform identifier (optional, use only if provided by xRocket).
         :return: ``WithdrawalLink``.
         """
-        return WithdrawalLink.de_json(self._request("POST", "/api/v1/withdrawal-link", body=_without_none(
+        return WithdrawalLink.de_json(self._request("POST", "/api/v1/withdrawal-link", body=self.__without_none(
             network=network, address=address, asset=asset, amount=str(amount), comment=comment, platform=platform,
         )))
