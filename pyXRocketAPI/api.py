@@ -398,7 +398,7 @@ class xRocketPayAPI:
         """
         self._request("DELETE", "/api/v1/cheques", params=self.__identifier("chequeId", cheque_id, "clientChequeId", client_cheque_id))
 
-    def payout_funds_to_user(self, target: str, target_type: str, asset: str, amount: str | int | float, client_payout_id: str | None = None,
+    def create_payout(self, target: str, target_type: str, asset: str, amount: str | int | float, client_payout_id: str | None = None,
                       description: str | None = None, callback: PayoutCallback | None = None) -> Payout:
         """Payout funds to user.
 
@@ -459,7 +459,7 @@ class xRocketPayAPI:
             payout_data.append(payout.to_dict())
         return MassPayouts.de_json(self._request("POST", "/api/v1/mass-payouts", body={"asset": asset, "payouts": payout_data}))
 
-    def withdrawal_funds(self, client_withdrawal_id: str, network: str, address: str, asset: str, amount: str | int | float,
+    def create_withdrawal(self, client_withdrawal_id: str, network: str, address: str, asset: str, amount: str | int | float,
                          comment: str | None = None, callback: WithdrawalCallback | None = None) -> Withdrawal:
         """Withdrawal funds from application to external wallet.
 

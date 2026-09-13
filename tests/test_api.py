@@ -148,7 +148,7 @@ class XRocketPayAPITests(unittest.TestCase):
         self.assertEqual(self.request.call_args.kwargs["json"]["url"], {"successUrl": "https://example.com/success"})
 
         self.request.return_value = Response(data={"payoutId": "payout-1"})
-        client.payout_funds_to_user(
+        client.create_payout(
             target="123", target_type="telegram_user_id", asset="USDT", amount=2.5,
             callback=PayoutCallback(callbackUrl="https://example.com/payout", payload={"id": "2"}),
         )
@@ -158,7 +158,7 @@ class XRocketPayAPITests(unittest.TestCase):
         self.assertEqual(self.request.call_args.kwargs["json"]["amount"], "2.5")
 
         self.request.return_value = Response(data={"withdrawalId": "withdrawal-1"})
-        client.withdrawal_funds(
+        client.create_withdrawal(
             client_withdrawal_id="withdrawal-1", network="TON", address="address", asset="USDT", amount=3.5,
             callback=WithdrawalCallback(callbackUrl="https://example.com/withdrawal", payload={"id": "3"}),
         )
@@ -271,14 +271,14 @@ class XRocketPayAPITests(unittest.TestCase):
 
     def test_payout_and_withdrawal_payloads(self):
         client = self.client(Response(201, {"payoutId": "p-1", "amount": "1.20"}))
-        payout = client.payout_funds_to_user(
+        payout = client.create_payout(
             target="123", target_type="telegram_user_id", asset="USDT", amount="1.20", client_payout_id="pay-1"
         )
         self.assertEqual(payout.payoutId, "p-1")
         self.assertEqual(self.request.call_args.kwargs["json"]["clientPayoutId"], "pay-1")
 
         self.request.return_value = Response(201, {"withdrawalId": "w-1", "status": "pending"})
-        withdrawal = client.withdrawal_funds(
+        withdrawal = client.create_withdrawal(
             client_withdrawal_id="withdraw-1", network="TON", address="UQexample", asset="USDT", amount="2"
         )
         self.assertEqual(withdrawal.withdrawalId, "w-1")
