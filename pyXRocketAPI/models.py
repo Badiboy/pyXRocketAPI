@@ -17,6 +17,15 @@ class Dictionaryable(ABC):
         """
         raise NotImplementedError
 
+    @staticmethod
+    def _number_as_string(value):
+        """Encode one number for an API field whose schema type is string."""
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            raise TypeError("Boolean values are not valid numeric API values.")
+        return str(value)
+
 
 class xRocketObject(ABC):
     """Base class for xRocket Pay API response models.
@@ -165,7 +174,14 @@ class Balance(xRocketObject):
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
-        return super(Balance, cls).de_json(data, process_mode=2)
+        instance = super(Balance, cls).de_json(data, process_mode=2)
+        if instance.balance is not None:
+            instance.balance = float(instance.balance)
+        if instance.available is not None:
+            instance.available = float(instance.available)
+        if instance.holds is not None:
+            instance.holds = float(instance.holds)
+        return instance
 
 
 # noinspection method-overriding
@@ -312,6 +328,12 @@ class Invoice(xRocketObject):
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         instance = super(Invoice, cls).de_json(data, process_mode=2)
+        if instance.priceAmount is not None:
+            instance.priceAmount = float(instance.priceAmount)
+        if instance.minPayment is not None:
+            instance.minPayment = float(instance.minPayment)
+        if instance.expiresIn is not None:
+            instance.expiresIn = int(instance.expiresIn)
         if instance.callback is not None:
             instance.callback = InvoiceCallback.de_json(instance.callback)
         if instance.url is not None:
@@ -491,6 +513,8 @@ class Payout(xRocketObject):
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         instance = super(Payout, cls).de_json(data, process_mode=2)
+        if instance.amount is not None:
+            instance.amount = float(instance.amount)
         if instance.callback is not None:
             instance.callback = PayoutCallback.de_json(instance.callback)
         return instance
@@ -553,6 +577,8 @@ class Withdrawal(xRocketObject):
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         instance = super(Withdrawal, cls).de_json(data, process_mode=2)
+        if instance.amount is not None:
+            instance.amount = float(instance.amount)
         if instance.callback is not None:
             instance.callback = WithdrawalCallback.de_json(instance.callback)
         return instance
@@ -616,7 +642,10 @@ class Rate(xRocketObject):
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
-        return super(Rate, cls).de_json(data, process_mode=2)
+        instance = super(Rate, cls).de_json(data, process_mode=2)
+        if instance.rate is not None:
+            instance.rate = float(instance.rate)
+        return instance
 
 
 # noinspection method-overriding
@@ -654,7 +683,10 @@ class CursorPagination(xRocketObject):
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
-        return super(CursorPagination, cls).de_json(data, process_mode=2)
+        instance = super(CursorPagination, cls).de_json(data, process_mode=2)
+        if instance.total is not None:
+            instance.total = int(instance.total)
+        return instance
 
 
 # noinspection method-overriding
@@ -717,7 +749,10 @@ class InvoicePaymentTransactionBlockchainDetails(xRocketObject):
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
-        return super(InvoicePaymentTransactionBlockchainDetails, cls).de_json(data, process_mode=2)
+        instance = super(InvoicePaymentTransactionBlockchainDetails, cls).de_json(data, process_mode=2)
+        if instance.amount is not None:
+            instance.amount = float(instance.amount)
+        return instance
 
 
 # noinspection method-overriding
@@ -755,6 +790,10 @@ class InvoiceInternalTransaction(xRocketObject):
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         instance = super(InvoiceInternalTransaction, cls).de_json(data, process_mode=2)
+        if instance.payAmount is not None:
+            instance.payAmount = float(instance.payAmount)
+        if instance.receiveAmount is not None:
+            instance.receiveAmount = float(instance.receiveAmount)
         if instance.payer is not None:
             instance.payer = InvoicePaymentPayer.de_json(instance.payer)
         return instance
@@ -797,6 +836,10 @@ class InvoiceBlockchainTransaction(xRocketObject):
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         instance = super(InvoiceBlockchainTransaction, cls).de_json(data, process_mode=2)
+        if instance.payAmount is not None:
+            instance.payAmount = float(instance.payAmount)
+        if instance.receiveAmount is not None:
+            instance.receiveAmount = float(instance.receiveAmount)
         if instance.payer is not None:
             instance.payer = InvoicePaymentPayer.de_json(instance.payer)
         if instance.tx is not None:
@@ -833,6 +876,10 @@ class InvoicePayment(xRocketObject):
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         instance = super(InvoicePayment, cls).de_json(data, process_mode=2)
+        if instance.payAmount is not None:
+            instance.payAmount = float(instance.payAmount)
+        if instance.receiveAmount is not None:
+            instance.receiveAmount = float(instance.receiveAmount)
         transactions = []
         for transaction in instance.transactions:
             transaction_data = cls.check_json(transaction)
@@ -963,7 +1010,10 @@ class InvoicePaymentAddress(xRocketObject):
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
-        return super(InvoicePaymentAddress, cls).de_json(data, process_mode=2)
+        instance = super(InvoicePaymentAddress, cls).de_json(data, process_mode=2)
+        if instance.minAmount is not None:
+            instance.minAmount = float(instance.minAmount)
+        return instance
 
 
 # noinspection method-overriding
@@ -986,7 +1036,14 @@ class WithdrawalQuotas(xRocketObject):
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
-        return super(WithdrawalQuotas, cls).de_json(data, process_mode=2)
+        instance = super(WithdrawalQuotas, cls).de_json(data, process_mode=2)
+        if instance.withdrawMinSize is not None:
+            instance.withdrawMinSize = float(instance.withdrawMinSize)
+        if instance.withdrawFee is not None:
+            instance.withdrawFee = float(instance.withdrawFee)
+        if instance.precision is not None:
+            instance.precision = int(instance.precision)
+        return instance
 
 
 # noinspection method-overriding
@@ -1038,7 +1095,7 @@ class MassPayout(Dictionaryable, xRocketObject):
         data = {
             "target": self.target,
             "targetType": self.targetType,
-            "amount": self.amount,
+            "amount": self._number_as_string(self.amount),
             "clientPayoutId": self.clientPayoutId,
             "description": self.description,
             "callback": self.callback.to_dict() if self.callback is not None else None,
@@ -1098,6 +1155,8 @@ class MassPayoutError(xRocketObject):
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         instance = super(MassPayoutError, cls).de_json(data, process_mode=2)
+        if instance.amount is not None:
+            instance.amount = float(instance.amount)
         if instance.reason is not None:
             instance.reason = MassPayoutReason.de_json(instance.reason)
         return instance

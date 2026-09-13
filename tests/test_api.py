@@ -4,20 +4,29 @@ from unittest.mock import patch
 from pyXRocketAPI import Cheque, ChequesList, Health, xPage, xRocketAPIException, xRocketPayAPI
 from pyXRocketAPI import api as api_module
 from pyXRocketAPI.models import (
+    Balance,
     ChequeCallback,
     ChequeUrl,
+    Invoice,
     InvoiceBlockchainTransaction,
     InvoiceCallback,
     InvoiceCustomer,
     InvoiceInternalTransaction,
     InvoiceLinks,
+    InvoicePayment,
     InvoicePaymentPayer,
     InvoicePaymentTransactionBlockchainDetails,
+    InvoicePaymentAddress,
     InvoiceUrl,
     HealthComponent,
     MassPayout,
+    MassPayoutError,
+    Payout,
     PayoutCallback,
+    Rate,
+    Withdrawal,
     WithdrawalCallback,
+    WithdrawalQuotas,
 )
 
 
@@ -105,7 +114,7 @@ class XRocketPayAPITests(unittest.TestCase):
         client = self.client(Response(data={"id": "invoice-1"}))
         client.create_invoice(
             price_currency="USDT",
-            price_amount="10",
+            price_amount=10.5,
             callback=InvoiceCallback(callbackUrl="https://example.com/invoice", payload={"order": "1"}),
             url=InvoiceUrl(successUrl="https://example.com/success", cancelUrl="https://example.com/cancel"),
             customer=InvoiceCustomer(id="customer-1", telegramUsername="customer"),
@@ -113,7 +122,7 @@ class XRocketPayAPITests(unittest.TestCase):
 
         self.assertEqual(self.request.call_args.kwargs["json"], {
             "priceCurrency": "USDT",
-            "priceAmount": "10",
+            "priceAmount": "10.5",
             "callback": {"callbackUrl": "https://example.com/invoice", "payload": {"order": "1"}},
             "url": {"successUrl": "https://example.com/success", "cancelUrl": "https://example.com/cancel"},
             "customer": {"id": "customer-1", "telegramUsername": "customer"},
@@ -121,53 +130,83 @@ class XRocketPayAPITests(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             client.create_invoice(price_currency="USDT", callback={"callbackUrl": "https://example.com"})
+        with self.assertRaises(TypeError):
+            client.create_invoice(price_currency="USDT", price_amount=True)
 
     def test_cheque_payout_withdrawal_and_mass_payout_request_models_serialize(self):
         client = self.client(Response(data={"chequeId": "cheque-1"}))
         client.create_cheque(
             asset="USDT",
-            amount="1",
+            amount=1.25,
             callback=ChequeCallback(callbackUrl="https://example.com/cheque", payload={"id": "1"}),
             url=ChequeUrl(successUrl="https://example.com/success"),
         )
         self.assertEqual(self.request.call_args.kwargs["json"]["callback"], {
             "callbackUrl": "https://example.com/cheque", "payload": {"id": "1"},
         })
+        self.assertEqual(self.request.call_args.kwargs["json"]["amount"], "1.25")
         self.assertEqual(self.request.call_args.kwargs["json"]["url"], {"successUrl": "https://example.com/success"})
 
         self.request.return_value = Response(data={"payoutId": "payout-1"})
         client.payout_funds_to_user(
-            target="123", target_type="telegram_user_id", asset="USDT", amount="1",
+            target="123", target_type="telegram_user_id", asset="USDT", amount=2.5,
             callback=PayoutCallback(callbackUrl="https://example.com/payout", payload={"id": "2"}),
         )
         self.assertEqual(self.request.call_args.kwargs["json"]["callback"], {
             "callbackUrl": "https://example.com/payout", "payload": {"id": "2"},
         })
+        self.assertEqual(self.request.call_args.kwargs["json"]["amount"], "2.5")
 
         self.request.return_value = Response(data={"withdrawalId": "withdrawal-1"})
         client.withdrawal_funds(
-            client_withdrawal_id="withdrawal-1", network="TON", address="address", asset="USDT", amount="1",
+            client_withdrawal_id="withdrawal-1", network="TON", address="address", asset="USDT", amount=3.5,
             callback=WithdrawalCallback(callbackUrl="https://example.com/withdrawal", payload={"id": "3"}),
         )
         self.assertEqual(self.request.call_args.kwargs["json"]["callback"], {
             "callbackUrl": "https://example.com/withdrawal", "payload": {"id": "3"},
         })
+        self.assertEqual(self.request.call_args.kwargs["json"]["amount"], "3.5")
 
         self.request.return_value = Response(data={"successPayouts": [], "errorPayouts": []})
         client.create_mass_payouts(
             asset="USDT",
             payouts=[MassPayout(
-                target="123", targetType="telegram_user_id", amount="1",
+                target="123", targetType="telegram_user_id", amount=1.75,
                 callback=PayoutCallback(callbackUrl="https://example.com/mass-payout"),
             )],
         )
         self.assertEqual(self.request.call_args.kwargs["json"], {
             "asset": "USDT",
             "payouts": [{
-                "target": "123", "targetType": "telegram_user_id", "amount": "1",
+                "target": "123", "targetType": "telegram_user_id", "amount": "1.75",
                 "callback": {"callbackUrl": "https://example.com/mass-payout"},
             }],
         })
+
+    def test_models_decode_numeric_api_strings(self):
+        balance = Balance.de_json({"asset": "USDT", "balance": "12.5", "available": "10", "holds": "2.5"})
+        invoice = Invoice.de_json({"id": "invoice-1", "priceAmount": "1.23", "minPayment": "0.01", "expiresIn": 60000})
+        payment = InvoicePayment.de_json({
+            "payAmount": "2.5", "receiveAmount": "2.25", "transactions": [],
+        })
+        internal = InvoiceInternalTransaction.de_json({"payAmount": "3", "receiveAmount": "2.9"})
+        blockchain = InvoiceBlockchainTransaction.de_json({
+            "payAmount": "4", "receiveAmount": "3.8", "tx": {"amount": "4.0"},
+        })
+        payout = Payout.de_json({"amount": "5.5"})
+        withdrawal = Withdrawal.de_json({"amount": "6.25"})
+        rate = Rate.de_json({"rate": "291.87"})
+        address = InvoicePaymentAddress.de_json({"minAmount": "0.01"})
+        quotas = WithdrawalQuotas.de_json({"withdrawMinSize": "0.001", "withdrawFee": "0.003", "precision": 6})
+        error = MassPayoutError.de_json({"amount": "7.5"})
+
+        self.assertEqual((balance.balance, balance.available, balance.holds), (12.5, 10.0, 2.5))
+        self.assertEqual((invoice.priceAmount, invoice.minPayment, invoice.expiresIn), (1.23, 0.01, 60000))
+        self.assertEqual((payment.payAmount, payment.receiveAmount), (2.5, 2.25))
+        self.assertEqual((internal.payAmount, internal.receiveAmount), (3.0, 2.9))
+        self.assertEqual((blockchain.payAmount, blockchain.receiveAmount, blockchain.tx.amount), (4.0, 3.8, 4.0))
+        self.assertEqual((payout.amount, withdrawal.amount, rate.rate), (5.5, 6.25, 291.87))
+        self.assertEqual((address.minAmount, quotas.withdrawMinSize, quotas.withdrawFee, quotas.precision, error.amount), (0.01, 0.001, 0.003, 6, 7.5))
 
     def test_invoice_payment_deserializes_transaction_subschemas(self):
         client = self.client(Response(data={
@@ -259,7 +298,7 @@ class XRocketPayAPITests(unittest.TestCase):
     def test_lists_and_optional_rate_authorization(self):
         client = self.client(Response(data=[{"currency": "TON", "rate": "2.5"}]))
         rates = client.get_rates("USDT", ["TON"], authorize=False)
-        self.assertEqual(rates[0].rate, "2.5")
+        self.assertEqual(rates[0].rate, 2.5)
         self.assertNotIn("Authorization", self.request.call_args.kwargs["headers"])
         self.assertEqual(self.request.call_args.kwargs["params"], {"base": "USDT", "assets": ["TON"]})
 

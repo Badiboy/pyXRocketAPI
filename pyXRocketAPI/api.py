@@ -48,6 +48,15 @@ class xRocketPayAPI:
             raise TypeError("{} must be an instance of {}.".format(parameter_name, model_type.__name__))
         return value.to_dict()
 
+    @staticmethod
+    def __number_as_string(value: str | int | float | None, parameter_name: str) -> str | None:
+        """Encode one numeric API field whose wire type is string."""
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            raise TypeError("{} must be a string or number, not bool.".format(parameter_name))
+        return str(value)
+
     def __init__(
         self,
         token: str | None = None,
@@ -184,8 +193,8 @@ class xRocketPayAPI:
     def create_invoice(
         self,
         price_currency: str,
-        price_amount: str | None = None,
-        min_payment: str | None = None,
+        price_amount: str | int | float | None = None,
+        min_payment: str | int | float | None = None,
         num_payments: int | None = None,
         payout_currency: str | None = None,
         pay_currencies: Iterable[str] | None = None,
@@ -204,8 +213,8 @@ class xRocketPayAPI:
         API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-create-invoice
 
         :param price_currency: Invoice price currency (crypto or fiat).
-        :param price_amount: Invoice price amount.
-        :param min_payment: Minimum payment amount (for open-amount invoices).
+        :param price_amount: Invoice price amount. A numeric value is encoded as an API string.
+        :param min_payment: Minimum payment amount (for open-amount invoices). A numeric value is encoded as an API string.
         :param num_payments: Num payments for invoice.
         :param payout_currency: Invoice payout crypto currency.
         :param pay_currencies: Crypto currencies which can be used to pay the invoice.
@@ -221,7 +230,9 @@ class xRocketPayAPI:
         :return: ``Invoice``.
         """
         body = self.__without_none(
-            priceCurrency=price_currency, priceAmount=price_amount, minPayment=min_payment, numPayments=num_payments,
+            priceCurrency=price_currency,
+            priceAmount=self.__number_as_string(price_amount, "price_amount"),
+            minPayment=self.__number_as_string(min_payment, "min_payment"), numPayments=num_payments,
             payoutCurrency=payout_currency, payCurrencies=list(pay_currencies) if pay_currencies is not None else None,
             clientInvoiceId=client_invoice_id, description=description, expiresIn=expires_in,
             callback=self.__request_model(callback, InvoiceCallback, "callback"),
@@ -305,7 +316,7 @@ class xRocketPayAPI:
             params=self.__identifier("invoiceId", invoice_id, "clientInvoiceId", client_invoice_id), body={"payNetwork": pay_network},
         ))
 
-    def create_cheque(self, asset: str, amount: str, client_cheque_id: str | None = None, password: str | None = None,
+    def create_cheque(self, asset: str, amount: str | int | float, client_cheque_id: str | None = None, password: str | None = None,
                       description: str | None = None, callback: ChequeCallback | None = None, url: ChequeUrl | None = None,
                       target_type: str | None = None, target: str | None = None) -> Cheque:
         """Create cheque.
@@ -314,7 +325,7 @@ class xRocketPayAPI:
         Issue a personal cheque to perform an accept-type payout. The amount is reserved from the application balance and can be redeemed by the recipient or cancelled before redemption. When targetType and target are set, only the addressed user is allowed to redeem the cheque.
 
         :param asset: Currency of transfer.
-        :param amount: Cheque amount.
+        :param amount: Cheque amount. A numeric value is encoded as an API string.
         :param client_cheque_id: Unique cheque ID in your system to prevent double spends.
         :param password: Cheque password, the recipient has to enter it to redeem the cheque.
         :param description: Description for cheque.
@@ -325,7 +336,7 @@ class xRocketPayAPI:
         :return: ``Cheque``.
         """
         return Cheque.de_json(self._request("POST", "/api/v1/cheques", body=self.__without_none(
-            asset=asset, amount=str(amount), clientChequeId=client_cheque_id, password=password, description=description,
+            asset=asset, amount=self.__number_as_string(amount, "amount"), clientChequeId=client_cheque_id, password=password, description=description,
             callback=self.__request_model(callback, ChequeCallback, "callback"),
             url=self.__request_model(url, ChequeUrl, "url"), targetType=target_type, target=target,
         )))
@@ -387,7 +398,7 @@ class xRocketPayAPI:
         """
         self._request("DELETE", "/api/v1/cheques", params=self.__identifier("chequeId", cheque_id, "clientChequeId", client_cheque_id))
 
-    def payout_funds_to_user(self, target: str, target_type: str, asset: str, amount: str, client_payout_id: str | None = None,
+    def payout_funds_to_user(self, target: str, target_type: str, asset: str, amount: str | int | float, client_payout_id: str | None = None,
                       description: str | None = None, callback: PayoutCallback | None = None) -> Payout:
         """Payout funds to user.
 
@@ -396,14 +407,14 @@ class xRocketPayAPI:
         :param target: Target.
         :param target_type: Target type.
         :param asset: Asset of transfer.
-        :param amount: Payout amount.
+        :param amount: Payout amount. A numeric value is encoded as an API string.
         :param client_payout_id: Unique payout ID in your system to prevent double spends.
         :param description: Payout description.
         :param callback: Webhook settings for payout status updates as a ``PayoutCallback`` instance.
         :return: ``Payout``.
         """
         return Payout.de_json(self._request("POST", "/api/v1/payouts", body=self.__without_none(
-            target=target, targetType=target_type, asset=asset, amount=str(amount), clientPayoutId=client_payout_id,
+            target=target, targetType=target_type, asset=asset, amount=self.__number_as_string(amount, "amount"), clientPayoutId=client_payout_id,
             description=description, callback=self.__request_model(callback, PayoutCallback, "callback"),
         )))
 
@@ -448,7 +459,7 @@ class xRocketPayAPI:
             payout_data.append(payout.to_dict())
         return MassPayouts.de_json(self._request("POST", "/api/v1/mass-payouts", body={"asset": asset, "payouts": payout_data}))
 
-    def withdrawal_funds(self, client_withdrawal_id: str, network: str, address: str, asset: str, amount: str,
+    def withdrawal_funds(self, client_withdrawal_id: str, network: str, address: str, asset: str, amount: str | int | float,
                          comment: str | None = None, callback: WithdrawalCallback | None = None) -> Withdrawal:
         """Withdrawal funds from application to external wallet.
 
@@ -458,13 +469,13 @@ class xRocketPayAPI:
         :param network: Network code.
         :param address: Withdrawal address.
         :param asset: Asset code.
-        :param amount: Withdrawal amount.
+        :param amount: Withdrawal amount. A numeric value is encoded as an API string.
         :param comment: Withdrawal comment.
         :param callback: Webhook settings for withdrawal status updates as a ``WithdrawalCallback`` instance.
         :return: ``Withdrawal``.
         """
         return Withdrawal.de_json(self._request("POST", "/api/v1/withdrawals", body=self.__without_none(
-            clientWithdrawalId=client_withdrawal_id, network=network, address=address, asset=asset, amount=str(amount),
+            clientWithdrawalId=client_withdrawal_id, network=network, address=address, asset=asset, amount=self.__number_as_string(amount, "amount"),
             comment=comment, callback=self.__request_model(callback, WithdrawalCallback, "callback"),
         )))
 
@@ -507,7 +518,7 @@ class xRocketPayAPI:
         """
         return WithdrawalQuotas.de_json(self._request("GET", "/api/v1/withdrawal-quotas", params={"network": network, "asset": asset}))
 
-    def create_withdrawal_link(self, network: str, address: str, asset: str, amount: str, comment: str | None = None,
+    def create_withdrawal_link(self, network: str, address: str, asset: str, amount: str | int | float, comment: str | None = None,
                                platform: str | None = None) -> WithdrawalLink:
         """Create withdrawal link.
 
@@ -516,11 +527,11 @@ class xRocketPayAPI:
         :param network: Network code.
         :param address: Withdrawal address.
         :param asset: Asset code.
-        :param amount: Withdrawal amount.
+        :param amount: Withdrawal amount. A numeric value is encoded as an API string.
         :param comment: Withdrawal comment.
         :param platform: Platform identifier (optional, use only if provided by xRocket).
         :return: ``WithdrawalLink``.
         """
         return WithdrawalLink.de_json(self._request("POST", "/api/v1/withdrawal-link", body=self.__without_none(
-            network=network, address=address, asset=asset, amount=str(amount), comment=comment, platform=platform,
+            network=network, address=address, asset=asset, amount=self.__number_as_string(amount, "amount"), comment=comment, platform=platform,
         )))
