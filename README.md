@@ -1,4 +1,8 @@
-# pyXRocketAPI
+[![PyPi Package Version](https://img.shields.io/pypi/v/pyXRocketAPI.svg)](https://pypi.python.org/pypi/pyXRocketAPI)
+[![Supported Python versions](https://img.shields.io/pypi/pyversions/pyXRocketAPI.svg)](https://pypi.python.org/pypi/pyXRocketAPI)
+[![PyPi downloads](https://img.shields.io/pypi/dm/pyXRocketAPI.svg)](https://pypi.org/project/pyXRocketAPI/)
+
+# <p align="center">pyXRocketAPI</p>
 
 **pyXRocketAPI** is a Python client for the [xRocket Pay API](https://docs.xrocket.exchange/api/pay/pay-api-overview). It supports application information, balances, invoices, cheques, payouts, withdrawals, currency rates, and health checks.
 
