@@ -1,8 +1,23 @@
 import unittest
 from unittest.mock import patch
 
-from pyXRocketAPI import Cheque, ChequesList, xPage, xRocketAPIException, xRocketPayAPI
+from pyXRocketAPI import Cheque, ChequesList, Health, xPage, xRocketAPIException, xRocketPayAPI
 from pyXRocketAPI import api as api_module
+from pyXRocketAPI.models import (
+    ChequeCallback,
+    ChequeUrl,
+    InvoiceBlockchainTransaction,
+    InvoiceCallback,
+    InvoiceCustomer,
+    InvoiceInternalTransaction,
+    InvoiceLinks,
+    InvoicePaymentPayer,
+    InvoicePaymentTransactionBlockchainDetails,
+    InvoiceUrl,
+    HealthComponent,
+    PayoutCallback,
+    WithdrawalCallback,
+)
 
 
 class Response:
@@ -30,9 +45,18 @@ class XRocketPayAPITests(unittest.TestCase):
         return xRocketPayAPI(token=token, timeout=5)
 
     def test_public_health_requires_no_token(self):
-        client = self.client(Response(data={"status": "ok"}), token=None)
+        client = self.client(Response(data={
+            "status": "ok",
+            "info": [{"name": "database", "status": "up"}],
+            "error": [],
+            "details": [{"name": "api", "status": "up", "message": "ready"}],
+        }), token=None)
         health = client.health_check()
+        self.assertIsInstance(health, Health)
         self.assertEqual(health.status, "ok")
+        self.assertIsInstance(health.info[0], HealthComponent)
+        self.assertIsInstance(health.details[0], HealthComponent)
+        self.assertEqual(health.details[0].message, "ready")
         method, url = self.request.call_args.args[:2]
         kwargs = self.request.call_args.kwargs
         self.assertEqual((method, url), ("GET", "https://pay.api.xrocket.exchange/health"))
@@ -56,6 +80,80 @@ class XRocketPayAPITests(unittest.TestCase):
         self.assertEqual(kwargs["json"], {
             "priceCurrency": "USDT", "priceAmount": "10.00", "clientInvoiceId": "order-1", "isFeePaidByUser": False,
         })
+
+    def test_invoice_deserializes_all_nested_response_schemas(self):
+        client = self.client(Response(data={
+            "id": "invoice-1",
+            "callback": {"callbackUrl": "https://example.com/webhook", "payload": {"order": "1"}},
+            "url": {"successUrl": "https://example.com/success", "cancelUrl": "https://example.com/cancel"},
+            "customer": {"id": "customer-1", "telegramUsername": "customer"},
+            "links": {"telegramBotLink": "https://t.me/xRocket?start=invoice"},
+        }))
+
+        invoice = client.get_invoice_info(invoice_id="invoice-1")
+
+        self.assertIsInstance(invoice.callback, InvoiceCallback)
+        self.assertEqual(invoice.callback.payload, {"order": "1"})
+        self.assertIsInstance(invoice.url, InvoiceUrl)
+        self.assertEqual(invoice.url.successUrl, "https://example.com/success")
+        self.assertIsInstance(invoice.customer, InvoiceCustomer)
+        self.assertEqual(invoice.customer.telegramUsername, "customer")
+        self.assertIsInstance(invoice.links, InvoiceLinks)
+
+    def test_invoice_payment_deserializes_transaction_subschemas(self):
+        client = self.client(Response(data={
+            "items": [{
+                "id": "payment-1", "status": "paid", "payAmount": "2", "payCurrency": "USDT",
+                "receiveAmount": "2", "receiveCurrency": "USDT",
+                "transactions": [
+                    {
+                        "id": "internal-1", "status": "confirmed", "type": "internal", "createdAt": "now",
+                        "payer": {"telegramId": "123"},
+                    },
+                    {
+                        "id": "blockchain-1", "status": "confirmed", "type": "blockchain", "createdAt": "now",
+                        "payer": {"email": "payer@example.com"},
+                        "tx": {"network": "TON", "txHash": "hash", "amount": "2", "currency": "USDT", "status": "confirmed"},
+                    },
+                ],
+            }],
+            "pagination": {"next": None},
+        }))
+
+        payments = client.get_invoice_payments(invoice_id="invoice-1")
+        internal, blockchain = payments.items[0].transactions
+
+        self.assertIsInstance(internal, InvoiceInternalTransaction)
+        self.assertIsInstance(internal.payer, InvoicePaymentPayer)
+        self.assertIsInstance(blockchain, InvoiceBlockchainTransaction)
+        self.assertIsInstance(blockchain.payer, InvoicePaymentPayer)
+        self.assertIsInstance(blockchain.tx, InvoicePaymentTransactionBlockchainDetails)
+
+    def test_cheque_payout_and_withdrawal_deserialize_callback_subschemas(self):
+        client = self.client(Response(data={
+            "chequeId": "cheque-1",
+            "callback": {"callbackUrl": "https://example.com/cheque", "payload": {"id": "1"}},
+            "url": {"successUrl": "https://example.com/success", "cancelUrl": "https://example.com/cancel"},
+        }))
+        cheque = client.get_cheque_info(cheque_id="cheque-1")
+
+        self.request.return_value = Response(data={
+            "payoutId": "payout-1", "callback": {"callbackUrl": "https://example.com/payout", "payload": {"id": "2"}},
+        })
+        payout = client.get_payout_info(payout_id="payout-1")
+
+        self.request.return_value = Response(data={
+            "withdrawalId": "withdrawal-1", "callback": {"callbackUrl": "https://example.com/withdrawal", "payload": {"id": "3"}},
+        })
+        withdrawal = client.get_withdrawal_info(withdrawal_id="withdrawal-1")
+
+        self.assertIsInstance(cheque.callback, ChequeCallback)
+        self.assertIsInstance(cheque.url, ChequeUrl)
+        self.assertEqual(cheque.callback.payload, {"id": "1"})
+        self.assertIsInstance(payout.callback, PayoutCallback)
+        self.assertEqual(payout.callback.payload, {"id": "2"})
+        self.assertIsInstance(withdrawal.callback, WithdrawalCallback)
+        self.assertEqual(withdrawal.callback.payload, {"id": "3"})
 
     def test_identifier_methods_validate_before_request(self):
         client = self.client(Response(data={}))

@@ -4,7 +4,7 @@ from typing import Any
 import requests
 
 from .exceptions import xRocketAPIException
-from .models import App, Balance, Cheque, ChequesList, Currency, Invoice, InvoicePaymentAddress, InvoicePaymentsList, InvoicesList, MassPayouts, xPage, Payout, PayoutsList, Rate, Withdrawal, WithdrawalLink, WithdrawalQuotas, WithdrawalsList, xRocketObject
+from .models import App, Balance, Cheque, ChequesList, Currency, Health, Invoice, InvoicePaymentAddress, InvoicePaymentsList, InvoicesList, MassPayouts, xPage, Payout, PayoutsList, Rate, Withdrawal, WithdrawalLink, WithdrawalQuotas, WithdrawalsList, xRocketObject
 
 PRODUCTION_API_URL = "https://pay.api.xrocket.exchange"
 TESTNET_API_URL = "https://pay.api.testnet.xrocket.exchange"
@@ -33,15 +33,17 @@ class xRocketPayAPI:
     testnet:
         Select the xRocket Pay testnet URL. A testnet token is required.
     timeout:
-        Timeout passed to every request, in seconds. ``None`` uses requests'
-        default behaviour.
+        Timeout passed to every request, in seconds.
+        ``None`` uses requests' default behaviour.
+        Default is 30 seconds.
+        A tuple of ``(connect, read)`` timeouts can be passed to override the default for each phase.
     """
 
     def __init__(
         self,
         token: str | None = None,
         testnet: bool = False,
-        timeout: float | tuple[float, float] | None = 10,
+        timeout: float | tuple[float, float] | None = 30,
     ) -> None:
         self.token = token
         self.timeout = timeout
@@ -113,14 +115,14 @@ class xRocketPayAPI:
         except ValueError as error:
             raise xRocketAPIException("xRocket Pay returned invalid JSON.", status=response.status_code) from error
 
-    def health_check(self) -> xRocketObject:
+    def health_check(self) -> Health:
         """Run the public health check.
 
         API: https://docs.xrocket.exchange/api/pay/reference/http/health-controller-health
 
-        :return: ``xRocketObject``.
+        :return: ``Health``.
         """
-        return xRocketObject.de_json(self._request("GET", "/health", auth_required=False), process_mode=2)
+        return Health.de_json(self._request("GET", "/health", auth_required=False))
 
     def get_app_info(self) -> App:
         """Get information about your application.

@@ -63,6 +63,54 @@ class xRocketObject(ABC):
 
 
 # noinspection method-overriding
+class HealthComponent(xRocketObject):
+    """One component reported by the xRocket Pay health check.
+
+    API: https://docs.xrocket.exchange/api/pay/reference/http/health-controller-health
+
+    :param name: No description is provided.
+    :param status: No description is provided.
+    :param message: No description is provided.
+    """
+    def __init__(self):
+        self.name = None
+        self.status = None
+        self.message = None
+
+    @classmethod
+    def de_json(cls, json_dict):
+        data = cls.check_json(json_dict)
+        return super(HealthComponent, cls).de_json(data, process_mode=2)
+
+
+# noinspection method-overriding
+class Health(xRocketObject):
+    """Response returned by the xRocket Pay health-check endpoint.
+
+    API: https://docs.xrocket.exchange/api/pay/reference/http/health-controller-health
+
+    :param status: No description is provided.
+    :param info: No description is provided.
+    :param error: No description is provided.
+    :param details: No description is provided.
+    """
+    def __init__(self):
+        self.status = None
+        self.info = []
+        self.error = []
+        self.details = []
+
+    @classmethod
+    def de_json(cls, json_dict):
+        data = cls.check_json(json_dict)
+        instance = super(Health, cls).de_json(data, process_mode=2)
+        instance.info = [HealthComponent.de_json(item) for item in instance.info]
+        instance.error = [HealthComponent.de_json(item) for item in instance.error]
+        instance.details = [HealthComponent.de_json(item) for item in instance.details]
+        return instance
+
+
+# noinspection method-overriding
 class App(xRocketObject):
     """Current application returned by xRocket Pay.
 
@@ -126,6 +174,70 @@ class InvoiceLinks(xRocketObject):
 
 
 # noinspection method-overriding
+class InvoiceCallback(xRocketObject):
+    """Webhook settings returned for an invoice.
+
+    API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice
+
+    :param callbackUrl: Url for notify when order status is changed.
+    :param payload: Custom data sent to webhook.
+    """
+
+    def __init__(self):
+        self.callbackUrl = None
+        self.payload = None
+
+    @classmethod
+    def de_json(cls, json_dict):
+        data = cls.check_json(json_dict)
+        return super(InvoiceCallback, cls).de_json(data, process_mode=2)
+
+
+# noinspection method-overriding
+class InvoiceUrl(xRocketObject):
+    """User redirect URLs returned for an invoice.
+
+    API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice
+
+    :param successUrl: Redirect user to url after successful payment.
+    :param cancelUrl: Redirect user to url after cancel payment.
+    """
+
+    def __init__(self):
+        self.successUrl = None
+        self.cancelUrl = None
+
+    @classmethod
+    def de_json(cls, json_dict):
+        data = cls.check_json(json_dict)
+        return super(InvoiceUrl, cls).de_json(data, process_mode=2)
+
+
+# noinspection method-overriding
+class InvoiceCustomer(xRocketObject):
+    """Customer information returned for an invoice.
+
+    API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice
+
+    :param id: Customer id in your app.
+    :param email: Customer email.
+    :param telegramId: Customer telegram ID.
+    :param telegramUsername: Customer telegram username (without @).
+    """
+
+    def __init__(self):
+        self.id = None
+        self.email = None
+        self.telegramId = None
+        self.telegramUsername = None
+
+    @classmethod
+    def de_json(cls, json_dict):
+        data = cls.check_json(json_dict)
+        return super(InvoiceCustomer, cls).de_json(data, process_mode=2)
+
+
+# noinspection method-overriding
 class Invoice(xRocketObject):
     """Invoice created in xRocket Pay.
 
@@ -142,10 +254,10 @@ class Invoice(xRocketObject):
     :param createdAt: Invoice creation time.
     :param expiresAt: Invoice expiration time (null if no expiration).
     :param status: Invoice status. **WARNING**: This list may be extended in the future. Always use exact status comparison and handle unknown statuses gracefully.
-    :param callback: No description is provided.
-    :param url: No description is provided.
-    :param customer: No description is provided.
-    :param links: No description is provided.
+    :param callback: Invoice webhook settings.
+    :param url: Invoice user redirect URLs.
+    :param customer: Invoice customer information.
+    :param links: Invoice payment links.
     """
     def __init__(self):
         self.id = None
@@ -168,6 +280,12 @@ class Invoice(xRocketObject):
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
         instance = super(Invoice, cls).de_json(data, process_mode=2)
+        if instance.callback is not None:
+            instance.callback = InvoiceCallback.de_json(instance.callback)
+        if instance.url is not None:
+            instance.url = InvoiceUrl.de_json(instance.url)
+        if instance.customer is not None:
+            instance.customer = InvoiceCustomer.de_json(instance.customer)
         if instance.links is not None:
             instance.links = InvoiceLinks.de_json(instance.links)
         return instance
@@ -195,6 +313,44 @@ class ChequeLinks(xRocketObject):
 
 
 # noinspection method-overriding
+class ChequeCallback(xRocketObject):
+    """Webhook settings returned for a cheque.
+
+    API: https://docs.xrocket.exchange/api/pay/reference/http/cheque-controller-get-cheque
+
+    :param callbackUrl: Url for notifying when cheque status changes.
+    :param payload: Custom data sent to webhook along with cheque status updates.
+    """
+    def __init__(self):
+        self.callbackUrl = None
+        self.payload = None
+
+    @classmethod
+    def de_json(cls, json_dict):
+        data = cls.check_json(json_dict)
+        return super(ChequeCallback, cls).de_json(data, process_mode=2)
+
+
+# noinspection method-overriding
+class ChequeUrl(xRocketObject):
+    """User redirect URLs returned for a cheque.
+
+    API: https://docs.xrocket.exchange/api/pay/reference/http/cheque-controller-get-cheque
+
+    :param successUrl: Redirect user to URL after successful cheque activation.
+    :param cancelUrl: Redirect user to URL after cheque activation is cancelled/failed.
+    """
+    def __init__(self):
+        self.successUrl = None
+        self.cancelUrl = None
+
+    @classmethod
+    def de_json(cls, json_dict):
+        data = cls.check_json(json_dict)
+        return super(ChequeUrl, cls).de_json(data, process_mode=2)
+
+
+# noinspection method-overriding
 class Cheque(xRocketObject):
     """Cheque created in xRocket Pay.
 
@@ -209,8 +365,8 @@ class Cheque(xRocketObject):
     :param links: Cheque activation links.
     :param state: Cheque state.
     :param deleted: Cheque is cancelled and the reserved funds are returned to the application balance.
-    :param callback: No description is provided.
-    :param url: No description is provided.
+    :param callback: Cheque webhook settings.
+    :param url: Cheque user redirect URLs.
     """
     def __init__(self):
         self.chequeId = None
@@ -231,7 +387,30 @@ class Cheque(xRocketObject):
         instance = super(Cheque, cls).de_json(data, process_mode=2)
         if instance.links is not None:
             instance.links = ChequeLinks.de_json(instance.links)
+        if instance.callback is not None:
+            instance.callback = ChequeCallback.de_json(instance.callback)
+        if instance.url is not None:
+            instance.url = ChequeUrl.de_json(instance.url)
         return instance
+
+
+# noinspection method-overriding
+class PayoutCallback(xRocketObject):
+    """Webhook settings returned for a payout.
+
+    API: https://docs.xrocket.exchange/api/pay/reference/http/payout-controller-get-payout
+
+    :param callbackUrl: Url for notify when payout status is changed.
+    :param payload: Custom data sent to webhook.
+    """
+    def __init__(self):
+        self.callbackUrl = None
+        self.payload = None
+
+    @classmethod
+    def de_json(cls, json_dict):
+        data = cls.check_json(json_dict)
+        return super(PayoutCallback, cls).de_json(data, process_mode=2)
 
 
 # noinspection method-overriding
@@ -264,7 +443,29 @@ class Payout(xRocketObject):
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
-        return super(Payout, cls).de_json(data, process_mode=2)
+        instance = super(Payout, cls).de_json(data, process_mode=2)
+        if instance.callback is not None:
+            instance.callback = PayoutCallback.de_json(instance.callback)
+        return instance
+
+
+# noinspection method-overriding
+class WithdrawalCallback(xRocketObject):
+    """Webhook settings returned for a withdrawal.
+
+    API: https://docs.xrocket.exchange/api/pay/reference/http/withdrawal-controller-get-withdrawal
+
+    :param callbackUrl: Url for notify when withdrawal status is changed.
+    :param payload: Custom data sent to webhook.
+    """
+    def __init__(self):
+        self.callbackUrl = None
+        self.payload = None
+
+    @classmethod
+    def de_json(cls, json_dict):
+        data = cls.check_json(json_dict)
+        return super(WithdrawalCallback, cls).de_json(data, process_mode=2)
 
 
 # noinspection method-overriding
@@ -299,7 +500,10 @@ class Withdrawal(xRocketObject):
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
-        return super(Withdrawal, cls).de_json(data, process_mode=2)
+        instance = super(Withdrawal, cls).de_json(data, process_mode=2)
+        if instance.callback is not None:
+            instance.callback = WithdrawalCallback.de_json(instance.callback)
+        return instance
 
 
 # noinspection method-overriding
@@ -419,13 +623,143 @@ class InvoicePaymentsPagination(xRocketObject):
 
 
 # noinspection method-overriding
+class InvoicePaymentPayer(xRocketObject):
+    """Payer information for an invoice payment transaction.
+
+    API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice-payments
+
+    :param email: Payer email.
+    :param telegramId: Payer telegram ID.
+    :param telegramUsername: Payer telegram username (without @).
+    """
+    def __init__(self):
+        self.email = None
+        self.telegramId = None
+        self.telegramUsername = None
+
+    @classmethod
+    def de_json(cls, json_dict):
+        data = cls.check_json(json_dict)
+        return super(InvoicePaymentPayer, cls).de_json(data, process_mode=2)
+
+
+# noinspection method-overriding
+class InvoicePaymentTransactionBlockchainDetails(xRocketObject):
+    """Blockchain-specific details of an invoice payment transaction.
+
+    API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice-payments
+
+    :param network: Blockchain network code.
+    :param txHash: Transaction hash.
+    :param amount: Amount in this specific transaction.
+    :param currency: Currency of this transaction.
+    :param status: On-chain status. **WARNING**: This list may be extended in the future. Treat unknown statuses as "in progress".
+    """
+    def __init__(self):
+        self.network = None
+        self.txHash = None
+        self.amount = None
+        self.currency = None
+        self.status = None
+
+    @classmethod
+    def de_json(cls, json_dict):
+        data = cls.check_json(json_dict)
+        return super(InvoicePaymentTransactionBlockchainDetails, cls).de_json(data, process_mode=2)
+
+
+# noinspection method-overriding
+class InvoiceInternalTransaction(xRocketObject):
+    """Internal transaction belonging to an invoice payment.
+
+    API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice-payments
+
+    :param id: Payment id.
+    :param status: Payment status. **WARNING**: This list may be extended in the future. Use exact string comparison and treat unknown statuses as "in progress".
+    :param payAmount: Amount payer sent (gross, before fees). Null when payment is created but amount is not yet known.
+    :param payCurrency: Currency payer used. Null when payment is created but currency is not yet known.
+    :param receiveAmount: Amount merchant receives after fees (in invoice priceCurrency). Null until payment is finalized.
+    :param receiveCurrency: Currency merchant receives (= invoice priceCurrency). Null until payment is finalized.
+    :param comment: Payer comment.
+    :param payer: Payer information.
+    :param createdAt: Payment creation time.
+    :param finalizedAt: When payment reached final state (null for in-progress payments).
+    :param type: Payment type.
+    """
+    def __init__(self):
+        self.id = None
+        self.status = None
+        self.payAmount = None
+        self.payCurrency = None
+        self.receiveAmount = None
+        self.receiveCurrency = None
+        self.comment = None
+        self.payer = None
+        self.createdAt = None
+        self.finalizedAt = None
+        self.type = None
+
+    @classmethod
+    def de_json(cls, json_dict):
+        data = cls.check_json(json_dict)
+        instance = super(InvoiceInternalTransaction, cls).de_json(data, process_mode=2)
+        if instance.payer is not None:
+            instance.payer = InvoicePaymentPayer.de_json(instance.payer)
+        return instance
+
+
+# noinspection method-overriding
+class InvoiceBlockchainTransaction(xRocketObject):
+    """Blockchain transaction belonging to an invoice payment.
+
+    API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice-payments
+
+    :param id: Payment id.
+    :param status: Payment status. **WARNING**: This list may be extended in the future. Use exact string comparison and treat unknown statuses as "in progress".
+    :param payAmount: Amount payer sent (gross, before fees). Null when payment is created but amount is not yet known.
+    :param payCurrency: Currency payer used. Null when payment is created but currency is not yet known.
+    :param receiveAmount: Amount merchant receives after fees (in invoice priceCurrency). Null until payment is finalized.
+    :param receiveCurrency: Currency merchant receives (= invoice priceCurrency). Null until payment is finalized.
+    :param comment: Payer comment.
+    :param payer: Payer information.
+    :param createdAt: Payment creation time.
+    :param finalizedAt: When payment reached final state (null for in-progress payments).
+    :param type: Payment type.
+    :param tx: Blockchain-specific details. Present only for ``type=blockchain`` transactions.
+    """
+    def __init__(self):
+        self.id = None
+        self.status = None
+        self.payAmount = None
+        self.payCurrency = None
+        self.receiveAmount = None
+        self.receiveCurrency = None
+        self.comment = None
+        self.payer = None
+        self.createdAt = None
+        self.finalizedAt = None
+        self.type = None
+        self.tx = None
+
+    @classmethod
+    def de_json(cls, json_dict):
+        data = cls.check_json(json_dict)
+        instance = super(InvoiceBlockchainTransaction, cls).de_json(data, process_mode=2)
+        if instance.payer is not None:
+            instance.payer = InvoicePaymentPayer.de_json(instance.payer)
+        if instance.tx is not None:
+            instance.tx = InvoicePaymentTransactionBlockchainDetails.de_json(instance.tx)
+        return instance
+
+
+# noinspection method-overriding
 class InvoicePayment(xRocketObject):
     """A payment made for an invoice.
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice-payments
 
     :param id: Unique payment id. Use it to match webhook events with the invoice payments endpoint.
-    :param status: Invoice status. **WARNING**: This list may be extended in the future. Always use exact status comparison and handle unknown statuses gracefully.
+    :param status: Payment status. **WARNING**: This list may be extended in the future. Use exact string comparison and treat unknown statuses as "in progress".
     :param finalizedAt: When payment reached final state (null for in-progress payments).
     :param payAmount: Gross amount payer sent in total across all transactions of this payment (before fees).
     :param payCurrency: Currency payer used.
@@ -446,7 +780,18 @@ class InvoicePayment(xRocketObject):
     @classmethod
     def de_json(cls, json_dict):
         data = cls.check_json(json_dict)
-        return super(InvoicePayment, cls).de_json(data, process_mode=2)
+        instance = super(InvoicePayment, cls).de_json(data, process_mode=2)
+        transactions = []
+        for transaction in instance.transactions:
+            transaction_data = cls.check_json(transaction)
+            if transaction_data.get("type") == "internal":
+                transactions.append(InvoiceInternalTransaction.de_json(transaction_data))
+            elif transaction_data.get("type") == "blockchain":
+                transactions.append(InvoiceBlockchainTransaction.de_json(transaction_data))
+            else:
+                transactions.append(xRocketObject.de_json(transaction_data, process_mode=2))
+        instance.transactions = transactions
+        return instance
 
 
 # noinspection method-overriding

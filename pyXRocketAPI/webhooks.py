@@ -58,8 +58,6 @@ track invoice completion only when ``event`` is
 ``invoice_status_changed`` and ``event.data.invoice.status`` is ``paid``.
 Payment finality is indicated by ``event.data.payment.finalizedAt`` not being
 ``None``, rather than by relying on one fixed status value.
-
-AI generated. Manually validated.
 """
 
 import hashlib
