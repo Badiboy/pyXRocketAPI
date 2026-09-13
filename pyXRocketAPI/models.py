@@ -68,8 +68,8 @@ class App(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/app-controller-get-app
 
-    :ivar id: No description is provided.
-    :ivar name: Name of current app.
+    :param id: No description is provided.
+    :param name: Name of current app.
     """
     def __init__(self):
         self.id = None
@@ -87,10 +87,10 @@ class Balance(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/app-controller-get-app-balances
 
-    :ivar asset: Balance asset.
-    :ivar balance: Asset balance.
-    :ivar available: Available balance.
-    :ivar holds: Holds balance.
+    :param asset: Balance asset.
+    :param balance: Asset balance.
+    :param available: Available balance.
+    :param holds: Holds balance.
     """
     def __init__(self):
         self.asset = None
@@ -110,9 +110,9 @@ class InvoiceLinks(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice
 
-    :ivar telegramBotLink: Invoice telegram bot link.
-    :ivar telegramMiniAppLink: Invoice telegram mini app link.
-    :ivar webLink: Invoice web link.
+    :param telegramBotLink: Invoice telegram bot link.
+    :param telegramMiniAppLink: Invoice telegram mini app link.
+    :param webLink: Invoice web link.
     """
     def __init__(self):
         self.telegramBotLink = None
@@ -131,21 +131,21 @@ class Invoice(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice
 
-    :ivar id: Invoice id.
-    :ivar priceAmount: Invoice price amount.
-    :ivar minPayment: Minimum payment amount (for open-amount invoices).
-    :ivar priceCurrency: Invoice price currency (crypto or fiat).
-    :ivar payCurrencies: Currencies which can be used to pay the invoice (crypto or fiat).
-    :ivar clientInvoiceId: Your unique identifier for this invoice to link with your internal system (e.g., order ID).
-    :ivar description: Description for invoice.
-    :ivar expiresIn: Invoice expires in milliseconds (from creation time).
-    :ivar createdAt: Invoice creation time.
-    :ivar expiresAt: Invoice expiration time (null if no expiration).
-    :ivar status: Invoice status. **WARNING**: This list may be extended in the future. Always use exact status comparison and handle unknown statuses gracefully.
-    :ivar callback: No description is provided.
-    :ivar url: No description is provided.
-    :ivar customer: No description is provided.
-    :ivar links: No description is provided.
+    :param id: Invoice id.
+    :param priceAmount: Invoice price amount.
+    :param minPayment: Minimum payment amount (for open-amount invoices).
+    :param priceCurrency: Invoice price currency (crypto or fiat).
+    :param payCurrencies: Currencies which can be used to pay the invoice (crypto or fiat).
+    :param clientInvoiceId: Your unique identifier for this invoice to link with your internal system (e.g., order ID).
+    :param description: Description for invoice.
+    :param expiresIn: Invoice expires in milliseconds (from creation time).
+    :param createdAt: Invoice creation time.
+    :param expiresAt: Invoice expiration time (null if no expiration).
+    :param status: Invoice status. **WARNING**: This list may be extended in the future. Always use exact status comparison and handle unknown statuses gracefully.
+    :param callback: No description is provided.
+    :param url: No description is provided.
+    :param customer: No description is provided.
+    :param links: No description is provided.
     """
     def __init__(self):
         self.id = None
@@ -179,9 +179,9 @@ class ChequeLinks(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/cheque-controller-get-cheque
 
-    :ivar telegramBotLink: Cheque activation telegram bot link.
-    :ivar telegramMiniAppLink: Cheque activation telegram mini app link (soon).
-    :ivar webLink: Cheque activation web link (soon).
+    :param telegramBotLink: Cheque activation telegram bot link.
+    :param telegramMiniAppLink: Cheque activation telegram mini app link (soon).
+    :param webLink: Cheque activation web link (soon).
     """
     def __init__(self):
         self.telegramBotLink = None
@@ -200,17 +200,17 @@ class Cheque(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/cheque-controller-get-cheque
 
-    :ivar chequeId: Cheque ID.
-    :ivar clientChequeId: Unique cheque ID in your system to prevent double spends.
-    :ivar asset: Currency of transfer.
-    :ivar description: Description for cheque.
-    :ivar targetType: Target type for cheque.
-    :ivar target: Target for cheque.
-    :ivar links: Cheque activation links.
-    :ivar state: Cheque state.
-    :ivar deleted: Cheque is cancelled and the reserved funds are returned to the application balance.
-    :ivar callback: No description is provided.
-    :ivar url: No description is provided.
+    :param chequeId: Cheque ID.
+    :param clientChequeId: Unique cheque ID in your system to prevent double spends.
+    :param asset: Currency of transfer.
+    :param description: Description for cheque.
+    :param targetType: Target type for cheque.
+    :param target: Target for cheque.
+    :param links: Cheque activation links.
+    :param state: Cheque state.
+    :param deleted: Cheque is cancelled and the reserved funds are returned to the application balance.
+    :param callback: No description is provided.
+    :param url: No description is provided.
     """
     def __init__(self):
         self.chequeId = None
@@ -240,15 +240,15 @@ class Payout(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/payout-controller-get-payout
 
-    :ivar payoutId: Payout ID.
-    :ivar clientPayoutId: Unique payout ID in your system to prevent double spends.
-    :ivar target: Target.
-    :ivar targetType: Target type.
-    :ivar asset: Asset of payout.
-    :ivar amount: Payout amount.
-    :ivar description: Payout description.
-    :ivar status: Payout status.
-    :ivar callback: Webhook settings of this payout.
+    :param payoutId: Payout ID.
+    :param clientPayoutId: Unique payout ID in your system to prevent double spends.
+    :param target: Target.
+    :param targetType: Target type.
+    :param asset: Asset of payout.
+    :param amount: Payout amount.
+    :param description: Payout description.
+    :param status: Payout status.
+    :param callback: Webhook settings of this payout.
     """
     def __init__(self):
         self.payoutId = None
@@ -273,16 +273,16 @@ class Withdrawal(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/withdrawal-controller-get-withdrawal
 
-    :ivar withdrawalId: Unique withdrawal ID in your system to prevent double spends.
-    :ivar network: Network code.
-    :ivar address: Withdrawal address.
-    :ivar asset: Asset code.
-    :ivar amount: Withdrawal amount. 9 decimal places, others cut off.
-    :ivar status: Withdrawal status.
-    :ivar comment: Withdrawal comment.
-    :ivar txHash: Withdrawal TX hash. Provided only after withdrawal.
-    :ivar txLink: Withdrawal TX link. Provided only after withdrawal.
-    :ivar callback: Webhook settings of this withdrawal.
+    :param withdrawalId: Unique withdrawal ID in your system to prevent double spends.
+    :param network: Network code.
+    :param address: Withdrawal address.
+    :param asset: Asset code.
+    :param amount: Withdrawal amount. 9 decimal places, others cut off.
+    :param status: Withdrawal status.
+    :param comment: Withdrawal comment.
+    :param txHash: Withdrawal TX hash. Provided only after withdrawal.
+    :param txLink: Withdrawal TX link. Provided only after withdrawal.
+    :param callback: Webhook settings of this withdrawal.
     """
     def __init__(self):
         self.withdrawalId = None
@@ -308,7 +308,7 @@ class CurrencyNetwork(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/currencies-controller-get-currencies
 
-    :ivar code: Network code.
+    :param code: Network code.
     """
     def __init__(self):
         self.code = None
@@ -325,10 +325,10 @@ class Currency(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/currencies-controller-get-currencies
 
-    :ivar code: No description is provided.
-    :ivar title: No description is provided.
-    :ivar kind: No description is provided.
-    :ivar networks: No description is provided.
+    :param code: No description is provided.
+    :param title: No description is provided.
+    :param kind: No description is provided.
+    :param networks: No description is provided.
     """
     def __init__(self):
         self.code = None
@@ -350,8 +350,8 @@ class Rate(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/rate-controller-get-rates
 
-    :ivar currency: No description is provided.
-    :ivar rate: Current rate.
+    :param currency: No description is provided.
+    :param rate: Current rate.
     """
     def __init__(self):
         self.currency = None
@@ -369,8 +369,8 @@ class xPage(xRocketObject):
 
     This is an SDK base model; the API has no standalone page endpoint.
 
-    :ivar items: No description is provided.
-    :ivar pagination: No description is provided.
+    :param items: No description is provided.
+    :param pagination: No description is provided.
     """
     def __init__(self):
         self.items = []
@@ -388,8 +388,8 @@ class CursorPagination(xRocketObject):
 
     This shared response fragment has no standalone API endpoint.
 
-    :ivar total: Total quantity of campaigns.
-    :ivar next: Cursor for the next page of results.
+    :param total: Total quantity of campaigns.
+    :param next: Cursor for the next page of results.
     """
     def __init__(self):
         self.total = None
@@ -407,7 +407,7 @@ class InvoicePaymentsPagination(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice-payments
 
-    :ivar next: Cursor for the next page of results.
+    :param next: Cursor for the next page of results.
     """
     def __init__(self):
         self.next = None
@@ -424,14 +424,14 @@ class InvoicePayment(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice-payments
 
-    :ivar id: Unique payment id. Use it to match webhook events with the invoice payments endpoint.
-    :ivar status: Invoice status. **WARNING**: This list may be extended in the future. Always use exact status comparison and handle unknown statuses gracefully.
-    :ivar finalizedAt: When payment reached final state (null for in-progress payments).
-    :ivar payAmount: Gross amount payer sent in total across all transactions of this payment (before fees).
-    :ivar payCurrency: Currency payer used.
-    :ivar receiveAmount: Net amount merchant receives after fees, summed across all transactions of this payment (in invoice priceCurrency).
-    :ivar receiveCurrency: Currency merchant receives (= invoice priceCurrency).
-    :ivar transactions: No description is provided.
+    :param id: Unique payment id. Use it to match webhook events with the invoice payments endpoint.
+    :param status: Invoice status. **WARNING**: This list may be extended in the future. Always use exact status comparison and handle unknown statuses gracefully.
+    :param finalizedAt: When payment reached final state (null for in-progress payments).
+    :param payAmount: Gross amount payer sent in total across all transactions of this payment (before fees).
+    :param payCurrency: Currency payer used.
+    :param receiveAmount: Net amount merchant receives after fees, summed across all transactions of this payment (in invoice priceCurrency).
+    :param receiveCurrency: Currency merchant receives (= invoice priceCurrency).
+    :param transactions: No description is provided.
     """
     def __init__(self):
         self.id = None
@@ -455,8 +455,8 @@ class InvoicesList(xPage):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoices
 
-    :ivar items: No description is provided.
-    :ivar pagination: No description is provided.
+    :param items: No description is provided.
+    :param pagination: No description is provided.
     """
     @classmethod
     def de_json(cls, json_dict):
@@ -474,8 +474,8 @@ class InvoicePaymentsList(xPage):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-controller-get-invoice-payments
 
-    :ivar items: No description is provided.
-    :ivar pagination: No description is provided.
+    :param items: No description is provided.
+    :param pagination: No description is provided.
     """
     @classmethod
     def de_json(cls, json_dict):
@@ -493,8 +493,8 @@ class ChequesList(xPage):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/cheque-controller-get-cheques
 
-    :ivar items: No description is provided.
-    :ivar pagination: No description is provided.
+    :param items: No description is provided.
+    :param pagination: No description is provided.
     """
     @classmethod
     def de_json(cls, json_dict):
@@ -512,8 +512,8 @@ class PayoutsList(xPage):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/payout-controller-get-list-payouts
 
-    :ivar items: No description is provided.
-    :ivar pagination: No description is provided.
+    :param items: No description is provided.
+    :param pagination: No description is provided.
     """
     @classmethod
     def de_json(cls, json_dict):
@@ -531,8 +531,8 @@ class WithdrawalsList(xPage):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/withdrawal-controller-get-withdrawals
 
-    :ivar items: No description is provided.
-    :ivar pagination: No description is provided.
+    :param items: No description is provided.
+    :param pagination: No description is provided.
     """
     @classmethod
     def de_json(cls, json_dict):
@@ -550,11 +550,11 @@ class InvoicePaymentAddress(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/invoice-payment-controller-create-invoice-payment-address
 
-    :ivar address: Deposit address.
-    :ivar payCurrency: Currency code.
-    :ivar payNetwork: Network code.
-    :ivar expiresAt: Payment expired at.
-    :ivar minAmount: Minimum deposit amount (invoice has no fixed amount).
+    :param address: Deposit address.
+    :param payCurrency: Currency code.
+    :param payNetwork: Network code.
+    :param expiresAt: Payment expired at.
+    :param minAmount: Minimum deposit amount (invoice has no fixed amount).
     """
     def __init__(self):
         self.address = None
@@ -575,10 +575,10 @@ class WithdrawalQuotas(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/withdrawal-controller-get-withdrawal-fees
 
-    :ivar withdrawMinSize: Minimum withdrawal amount.
-    :ivar withdrawFee: Withdrawal fee.
-    :ivar withdrawFeeAsset: Withdrawal fee asset.
-    :ivar precision: Floating point precision.
+    :param withdrawMinSize: Minimum withdrawal amount.
+    :param withdrawFee: Withdrawal fee.
+    :param withdrawFeeAsset: Withdrawal fee asset.
+    :param precision: Floating point precision.
     """
     def __init__(self):
         self.withdrawMinSize = None
@@ -598,9 +598,9 @@ class WithdrawalLink(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/withdrawal-links-controller-create-withdrawal-link
 
-    :ivar telegramBotLink: Withdrawal telegram bot link.
-    :ivar telegramMiniAppLink: Withdrawal telegram mini app link (soon).
-    :ivar webLink: Withdrawal web link (soon).
+    :param telegramBotLink: Withdrawal telegram bot link.
+    :param telegramMiniAppLink: Withdrawal telegram mini app link (soon).
+    :param webLink: Withdrawal web link (soon).
     """
     def __init__(self):
         self.telegramBotLink = None
@@ -619,12 +619,12 @@ class MassPayoutReason(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/mass-payouts-controller-create-mass-payouts
 
-    :ivar type: A URI reference that identifies the problem type.
-    :ivar title: A short, human-readable summary of the problem type.
-    :ivar status: HTTP status code.
-    :ivar detail: A human-readable explanation specific to this occurrence of the problem.
-    :ivar instance: A URI reference that identifies the specific occurrence of the problem.
-    :ivar kind: Problem category for easier error handling.
+    :param type: A URI reference that identifies the problem type.
+    :param title: A short, human-readable summary of the problem type.
+    :param status: HTTP status code.
+    :param detail: A human-readable explanation specific to this occurrence of the problem.
+    :param instance: A URI reference that identifies the specific occurrence of the problem.
+    :param kind: Problem category for easier error handling.
     """
     def __init__(self):
         self.type = None
@@ -646,12 +646,12 @@ class MassPayoutError(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/mass-payouts-controller-create-mass-payouts
 
-    :ivar target: Target.
-    :ivar targetType: Target type (only TelegramUserId is supported for mass payouts).
-    :ivar amount: Payout amount.
-    :ivar clientPayoutId: Unique payout ID in your system to prevent double spends.
-    :ivar description: Payout description.
-    :ivar reason: Payout error reason.
+    :param target: Target.
+    :param targetType: Target type (only TelegramUserId is supported for mass payouts).
+    :param amount: Payout amount.
+    :param clientPayoutId: Unique payout ID in your system to prevent double spends.
+    :param description: Payout description.
+    :param reason: Payout error reason.
     """
     def __init__(self):
         self.target = None
@@ -676,8 +676,8 @@ class MassPayouts(xRocketObject):
 
     API: https://docs.xrocket.exchange/api/pay/reference/http/mass-payouts-controller-create-mass-payouts
 
-    :ivar successPayouts: Successful payouts.
-    :ivar errorPayouts: Error payouts.
+    :param successPayouts: Successful payouts.
+    :param errorPayouts: Error payouts.
     """
     def __init__(self):
         self.successPayouts = []

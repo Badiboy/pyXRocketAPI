@@ -20,3 +20,19 @@ class xRocketAPIException(Exception):
         self.instance = instance
         self.kind = kind
         self.info = info
+
+
+class xRocketWebhookException(ValueError):
+    """Base class for errors while validating or parsing an xRocket webhook."""
+
+
+class xRocketWebhookParseException(xRocketWebhookException):
+    """Webhook body is not valid JSON or does not have the expected structure."""
+
+
+class xRocketWebhookSignatureException(xRocketWebhookException):
+    """Webhook signature is absent or does not match the supplied secret."""
+
+
+class xRocketWebhookUnsupportedVersionException(xRocketWebhookSignatureException):
+    """Webhook uses a signature scheme version unsupported by this library."""
